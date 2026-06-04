@@ -154,3 +154,12 @@ model AdminDocument {
   category  String   // REGISTRATION, POLICY, FINANCE, HR
   createdAt DateTime @default(now())
 }
+
+// License Module
+model License {
+  id         String   @id @default(cuid())
+  key        String   @unique
+  expiresAt  DateTime
+  activated  Boolean  @default(false)
+  activatedAt DateTime?
+}
