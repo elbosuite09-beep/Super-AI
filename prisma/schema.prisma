@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  role      String   @default("USER") // ADMIN, TEACHER, STUDENT, PARENT, DIRECTOR
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  teacher   Teacher?
+  student   Student?
+}
+
+model Teacher {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  specialty     String?
+  hourlyRate    Float    @default(0)
+  subjects      Subject[]
+  classes       Class[]
+  timetables    Timetable[]
+  teachingLogs  TeachingLog[]
+}
+
+model Student {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  registration String   @unique
+  classId      String?
+  class        Class?   @relation(fields: [classId], references: [id])
+  grades       Grade[]
+  attendances  Attendance[]
+  payments     FeePayment[]
+}
+
+model Class {
+  id          String   @id @default(cuid())
+  name        String
+  cycle       String   // PRE-SCHOOL, PRIMARY, MIDDLE, HIGH
+  teacherId   String?
+  teacher     Teacher? @relation(fields: [teacherId], references: [id])
+  students    Student[]
+  subjects    Subject[]
+  timetables  Timetable[]
+  courseFiles CourseFile[]
+  progress    CourseProgress[]
+}
+
+model Subject {
+  id          String   @id @default(cuid())
+  name        String
+  classes     Class[]
+  teachers    Teacher[]
+  grades      Grade[]
+  timetables  Timetable[]
+  courseFiles CourseFile[]
+  progress    CourseProgress[]
+}
+
+model Grade {
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id])
+  subjectId String
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  value     Float
+  period    String   // TERM 1, TERM 2, etc.
+  createdAt DateTime @default(now())
+}
+
+model Attendance {
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id])
+  date      DateTime
+  status    String   // PRESENT, ABSENT, LATE
+}
+
+model Timetable {
+  id        String   @id @default(cuid())
+  classId   String
+  class     Class    @relation(fields: [classId], references: [id])
+  subjectId String
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  teacherId String
+  teacher   Teacher  @relation(fields: [teacherId], references: [id])
+  dayOfWeek Int      // 1 to 5
+  startTime String
+  endTime   String
+}
+
+model FeePayment {
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id])
+  amount    Float
+  date      DateTime @default(now())
+  status    String   // PAID, PARTIAL, PENDING
+  comment   String?
+}
+
+// RH Module: Log of hours taught
+model TeachingLog {
+  id        String   @id @default(cuid())
+  teacherId String
+  teacher   Teacher  @relation(fields: [teacherId], references: [id])
+  date      DateTime
+  hours     Float
+  subjectId String
+  classId   String
+}
+
+// Pedagogical Module: Files and Progress
+model CourseFile {
+  id        String   @id @default(cuid())
+  title     String
+  url       String
+  type      String   // SYLLABUS, LESSON, EXERCISE, EXAM
+  target    String   // TEACHER, STUDENT
+  subjectId String
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  classId   String?
+  class     Class?   @relation(fields: [classId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model CourseProgress {
+  id        String   @id @default(cuid())
+  subjectId String
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  classId   String
+  class     Class    @relation(fields: [classId], references: [id])
+  chapter   String
+  status    String   // PLANNED, IN_PROGRESS, COMPLETED
+  updatedAt DateTime @updatedAt
+}
+
+// Administrative Documents
+model AdminDocument {
+  id        String   @id @default(cuid())
+  title     String
+  url       String
+  category  String   // REGISTRATION, POLICY, FINANCE, HR
+  createdAt DateTime @default(now())
+}
